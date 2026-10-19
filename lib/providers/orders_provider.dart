@@ -1,139 +1,249 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
-import '../models/app_notification.dart';
+import '../domain/order_search.dart';
+import '../domain/pricing.dart';
 import '../models/app_user.dart';
 import '../models/cart_item.dart';
+import '../models/measurements.dart';
 import '../models/order.dart';
-import '../services/mock_backend.dart';
-import 'catalog_provider.dart' show LoadState;
+import '../models/payment.dart';
+import '../repositories/repositories.dart';
+import 'load_state.dart';
 
-/// Orders, customers (admin) and notifications.
+/// Orders for the signed-in viewer (customer: own orders, admin: all), with
+/// shared search/filter logic, cancellation, status changes and payments.
 class OrdersProvider extends ChangeNotifier {
-  final MockBackend _backend = MockBackend.instance;
+  OrdersProvider(
+    this._orders,
+    this._gateway, {
+    this.searchDelay = const Duration(milliseconds: 300),
+  });
 
-  List<AppOrder> _orders = [];
-  LoadState _ordersState = LoadState.idle;
+  final OrderRepository _orders;
+  final PaymentGateway _gateway;
+  final Duration searchDelay;
 
-  List<AppUser> _customers = [];
-  LoadState _customersState = LoadState.idle;
+  AppUser? _viewer;
+  List<AppOrder> _results = [];
+  final Map<String, AppOrder> _known = {};
+  LoadState _state = LoadState.idle;
+  String? _error;
+  OrderSearchQuery _query = const OrderSearchQuery();
+  Timer? _debounce;
+  int _token = 0;
+  bool _disposed = false;
 
-  List<AppNotification> _notifications = [];
-  LoadState _notificationsState = LoadState.idle;
+  /// Orders matching the current search/filters.
+  List<AppOrder> get orders => _results;
+  LoadState get state => _state;
+  String? get error => _error;
+  OrderSearchQuery get query => _query;
+  bool get isDemoGateway => _gateway.isDemo;
+  String get gatewayName => _gateway.displayName;
 
-  List<AppOrder> get orders => _orders;
-  LoadState get ordersState => _ordersState;
+  /// Every order loaded so far (used for admin statistics such as spending).
+  List<AppOrder> get knownOrders => _known.values.toList();
 
-  List<AppUser> get customers => _customers;
-  LoadState get customersState => _customersState;
+  AppOrder? byId(String id) => _known[id];
 
-  List<AppNotification> get notifications => _notifications;
-  LoadState get notificationsState => _notificationsState;
-  int get unreadCount => _notifications.where((n) => !n.read).length;
-
-  AppOrder? byId(String id) {
-    for (final o in _orders) {
-      if (o.id == id) return o;
-    }
-    return null;
+  void _safeNotify() {
+    if (!_disposed) notifyListeners();
   }
 
-  Future<void> loadOrders(AppUser user) async {
-    _ordersState = LoadState.loading;
-    notifyListeners();
+  void _remember(Iterable<AppOrder> orders) {
+    for (final o in orders) {
+      _known[o.id] = o;
+    }
+  }
+
+  Future<void> load(AppUser viewer) async {
+    _viewer = viewer;
+    await _runSearch();
+  }
+
+  Future<void> refresh() => _runSearch();
+
+  Future<void> _runSearch() async {
+    final viewer = _viewer;
+    if (viewer == null) return;
+    final problem = OrderSearch.validate(_query);
+    if (problem != null) {
+      _error = problem;
+      _state = LoadState.error;
+      _safeNotify();
+      return;
+    }
+    final token = ++_token;
+    _state = LoadState.loading;
+    _error = null;
+    _safeNotify();
     try {
-      _orders = await _backend.getOrders(userId: user.isAdmin ? null : user.id);
-      _ordersState = LoadState.ready;
-    } catch (_) {
-      _ordersState = LoadState.error;
+      final result = await _orders.searchOrders(_query, viewer: viewer);
+      if (token != _token) return;
+      _results = result;
+      _remember(result);
+      _state = LoadState.ready;
+    } catch (e) {
+      if (token != _token) return;
+      _error = e.toString();
+      _state = LoadState.error;
     }
-    notifyListeners();
+    _safeNotify();
   }
 
-  Future<void> loadCustomers() async {
-    _customersState = LoadState.loading;
-    notifyListeners();
-    try {
-      _customers = await _backend.getCustomers();
-      _customersState = LoadState.ready;
-    } catch (_) {
-      _customersState = LoadState.error;
+  // ------------------------------------------------------------ search/filter
+
+  void setText(String text) {
+    if (text == _query.text) return;
+    _query = _query.copyWith(text: text);
+    _debounce?.cancel();
+    if (searchDelay == Duration.zero) {
+      _runSearch();
+    } else {
+      _debounce = Timer(searchDelay, _runSearch);
     }
-    notifyListeners();
+    _safeNotify();
   }
 
-  Future<void> loadNotifications(AppUser user) async {
-    _notificationsState = LoadState.loading;
-    notifyListeners();
-    try {
-      _notifications = await _backend.getNotifications(user.id);
-      _notificationsState = LoadState.ready;
-    } catch (_) {
-      _notificationsState = LoadState.error;
-    }
-    notifyListeners();
+  void setStatus(OrderStatus? status) {
+    _query = _query.copyWith(status: status, clearStatus: status == null);
+    _runSearch();
   }
 
-  Future<void> markAllNotificationsRead(AppUser user) async {
-    await _backend.markAllRead(user.id);
-    _notifications = [for (final n in _notifications) n.copyWith(read: true)];
-    notifyListeners();
+  void setPaymentStatus(PaymentStatus? status) {
+    _query = _query.copyWith(paymentStatus: status, clearPayment: status == null);
+    _runSearch();
   }
+
+  void setDateRange(DateTime? from, DateTime? to) {
+    _query = from == null && to == null
+        ? _query.copyWith(clearDates: true)
+        : OrderSearchQuery(
+            text: _query.text,
+            status: _query.status,
+            paymentStatus: _query.paymentStatus,
+            from: from,
+            to: to,
+          );
+    _runSearch();
+  }
+
+  void clearSearch() {
+    _debounce?.cancel();
+    _query = const OrderSearchQuery();
+    _runSearch();
+  }
+
+  // ------------------------------------------------------------------ orders
 
   /// Saves the cart as a Pending order. Throws on failure so the caller can
   /// keep the cart (SRS: "If network fails: error shown, cart kept").
   Future<AppOrder> placeOrder({
     required AppUser user,
     required List<CartItem> items,
+    required PriceBreakdown breakdown,
+    required String contactPhone,
     required String address,
+    String note = '',
+    OrderMeasurementSnapshot? measurements,
+    required PaymentMethod method,
   }) async {
-    final order = await _backend.placeOrder(
-      user: user,
-      items: [
-        for (final item in items)
-          OrderItem(
-            productId: item.product.id,
-            productName: item.product.productName,
-            price: item.product.price,
-            quantity: item.quantity,
-            imagePath: item.product.imagePath,
-            category: item.product.category,
-          ),
-      ],
-      address: address,
+    final order = await _orders.placeOrder(
+      PlaceOrderRequest(
+        userId: user.id,
+        customerName: user.name,
+        items: [
+          for (final i in items)
+            OrderLineRequest(
+              productId: i.product.id,
+              quantity: i.quantity,
+              colorName: i.colorName,
+              size: i.size,
+            ),
+        ],
+        contactPhone: contactPhone,
+        shippingAddress: address,
+        note: note,
+        measurements: measurements,
+        voucherCode: breakdown.voucherCode,
+        paymentMethod: method,
+        expectedTotalMinor: breakdown.totalMinor,
+      ),
     );
-    _orders = [order, ..._orders];
-    notifyListeners();
-    // Refresh notifications so the badge reflects the confirmation.
-    loadNotifications(user);
+    _known[order.id] = order;
+    _results = [order, ..._results];
+    _safeNotify();
     return order;
   }
 
-  Future<void> cancelOrder(String orderId, {required bool byAdmin}) async {
-    final updated = await _backend.cancelOrder(orderId, byAdmin: byAdmin);
+  Future<void> cancelOrder(
+    String orderId, {
+    required String reason,
+    String note = '',
+  }) async {
+    final actor = _viewer;
+    if (actor == null) return;
+    final updated = await _orders.cancelOrder(
+      orderId,
+      actor: actor,
+      reason: reason,
+      note: note,
+    );
     _replace(updated);
   }
 
   Future<void> updateStatus(String orderId, OrderStatus status) async {
-    final updated = await _backend.updateOrderStatus(orderId, status);
+    _replace(await _orders.updateStatus(orderId, status));
+  }
+
+  /// Starts an online payment with the configured gateway. In this phase the
+  /// gateway is a demonstration; success must never be assumed.
+  Future<PaymentSession> startOnlinePayment(AppOrder order) {
+    return _gateway.initiate(orderId: order.id, amountMinor: order.totalMinor);
+  }
+
+  /// Records the outcome of an online payment attempt. With a real gateway
+  /// this comes from the backend after it verifies the provider's callback.
+  Future<void> recordPayment(
+    String orderId,
+    PaymentStatus status, {
+    PaymentProvider provider = PaymentProvider.demo,
+    String? transactionRef,
+  }) async {
+    final updated = await _orders.updatePayment(
+      orderId,
+      status,
+      provider: provider,
+      transactionRef: transactionRef,
+    );
     _replace(updated);
   }
 
   void _replace(AppOrder updated) {
-    _orders = [
-      for (final o in _orders)
-        if (o.id == updated.id) updated else o,
-    ];
-    notifyListeners();
+    _known[updated.id] = updated;
+    _results = [for (final o in _results) o.id == updated.id ? updated : o];
+    _safeNotify();
   }
 
   /// Clears per-user data on logout.
   void reset() {
-    _orders = [];
-    _customers = [];
-    _notifications = [];
-    _ordersState = LoadState.idle;
-    _customersState = LoadState.idle;
-    _notificationsState = LoadState.idle;
-    notifyListeners();
+    _debounce?.cancel();
+    _viewer = null;
+    _results = [];
+    _known.clear();
+    _query = const OrderSearchQuery();
+    _state = LoadState.idle;
+    _error = null;
+    _token++;
+    _safeNotify();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _debounce?.cancel();
+    super.dispose();
   }
 }

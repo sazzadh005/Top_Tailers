@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../models/catalog_query.dart';
 import '../../models/product.dart';
-import '../../providers/cart_provider.dart';
 import '../../providers/catalog_provider.dart';
 import '../../widgets/common.dart';
-import 'product_detail_screen.dart';
+import '../../widgets/product_widgets.dart';
 
-/// Browse by category, search and open product details.
+/// Browse and search products (original search behaviour preserved), now with
+/// sort, in-stock filter and lazy page loading.
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
 
@@ -19,62 +19,139 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   final _searchController = TextEditingController();
+  final _scroll = ScrollController();
 
   static final List<String> _labels = ['All', ...kCategories];
 
   @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
   void dispose() {
+    _scroll.removeListener(_onScroll);
+    _scroll.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    if (_scroll.position.extentAfter < 400) {
+      context.read<CatalogProvider>().loadMore();
+    }
+  }
+
+  Future<void> _openFilters() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => const _SortFilterSheet(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final catalog = context.watch<CatalogProvider>();
+
+    // Keep the field in sync when the query is set from elsewhere (home).
+    if (_searchController.text != catalog.query) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _searchController.text != catalog.query) {
+          _searchController.text = catalog.query;
+        }
+      });
+    }
+
     final selectedIndex =
         catalog.category == null ? 0 : kCategories.indexOf(catalog.category!) + 1;
-    final products = catalog.filtered;
+    final items = catalog.items;
 
     Widget body;
-    if (catalog.state == LoadState.loading && catalog.products.isEmpty) {
-      body = const Center(child: CircularProgressIndicator());
-    } else if (catalog.state == LoadState.error && catalog.products.isEmpty) {
+    if (catalog.state == LoadState.loading && items.isEmpty) {
+      body = GridView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 240,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.62,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) => const SkeletonBox(radius: 16),
+      );
+    } else if (catalog.state == LoadState.error && items.isEmpty) {
       body = ErrorState(
         message: 'We could not load the products.',
-        onRetry: () => context.read<CatalogProvider>().load(),
+        onRetry: () => context.read<CatalogProvider>().loadFirstPage(),
       );
-    } else if (products.isEmpty) {
-      final searching = catalog.query.trim().isNotEmpty || catalog.category != null;
+    } else if (items.isEmpty) {
       body = EmptyState(
         icon: Icons.search_off,
-        title: searching ? 'No matching products' : 'No products yet',
-        message: searching
-            ? 'Try a different search or category.'
+        title: catalog.hasActiveFilters ? 'No matching products' : 'No products yet',
+        message: catalog.hasActiveFilters
+            ? 'Try a different search, category or filter.'
             : 'Check back soon for new arrivals.',
-        actionLabel: searching ? 'Clear filters' : null,
-        onAction: searching
+        actionLabel: catalog.hasActiveFilters ? 'Clear filters' : null,
+        onAction: catalog.hasActiveFilters
             ? () {
                 _searchController.clear();
-                final c = context.read<CatalogProvider>();
-                c.setQuery('');
-                c.setCategory(null);
+                context.read<CatalogProvider>().clearFilters();
               }
             : null,
       );
     } else {
       body = RefreshIndicator(
-        onRefresh: () => context.read<CatalogProvider>().load(),
-        child: GridView.builder(
+        onRefresh: () => context.read<CatalogProvider>().loadFirstPage(),
+        child: CustomScrollView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 240,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.66,
-          ),
-          itemCount: products.length,
-          itemBuilder: (context, index) => _ProductCard(product: products[index]),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 240,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.62,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => ProductCard(product: items[index]),
+                  childCount: items.length,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: catalog.loadingMore
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        )
+                      : (catalog.hasMore
+                          ? TextButton(
+                              onPressed: () =>
+                                  context.read<CatalogProvider>().loadMore(),
+                              child: const Text('Load more'),
+                            )
+                          : Text(
+                              'You have seen all ${catalog.total} products',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: AppColors.muted),
+                            )),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -82,13 +159,13 @@ class _ShopScreenState extends State<ShopScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: TextField(
             controller: _searchController,
             textInputAction: TextInputAction.search,
             onChanged: (v) => context.read<CatalogProvider>().setQuery(v),
             decoration: InputDecoration(
-              hintText: 'Search fabrics, shirts, services...',
+              hintText: 'Search name, product code or keyword',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: catalog.query.isEmpty
                   ? null
@@ -110,107 +187,99 @@ class _ShopScreenState extends State<ShopScreen> {
               .read<CatalogProvider>()
               .setCategory(i == 0 ? null : kCategories[i - 1]),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  catalog.state == LoadState.ready
+                      ? '${catalog.total} ${catalog.total == 1 ? 'product' : 'products'}'
+                      : ' ',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: AppColors.muted),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _openFilters,
+                icon: Badge(
+                  isLabelVisible:
+                      catalog.sort != ProductSort.featured || catalog.inStockOnly,
+                  smallSize: 8,
+                  child: const Icon(Icons.tune, size: 20),
+                ),
+                label: Text('Sort: ${catalog.sort.label}'),
+              ),
+            ],
+          ),
+        ),
         Expanded(child: body),
       ],
     );
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
-
-  final Product product;
+class _SortFilterSheet extends StatelessWidget {
+  const _SortFilterSheet();
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final available = product.availability;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => ProductDetailScreen(productId: product.id),
-          ),
-        ),
+    final catalog = context.watch<CatalogProvider>();
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ProductImage(
-                    category: product.category,
-                    imagePath: product.imagePath,
-                    borderRadius: 0,
-                  ),
-                  if (!available)
-                    Container(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      alignment: Alignment.center,
-                      child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.ink,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Out of stock',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                      ),
-                    ),
-                ],
+            Text('Sort by',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            for (final option in ProductSort.values)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(option.label),
+                leading: Icon(
+                  catalog.sort == option
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: AppColors.burgundy,
+                ),
+                onTap: () => context.read<CatalogProvider>().setSort(option),
               ),
+            const Divider(),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: AppColors.burgundy,
+              title: const Text('In stock only'),
+              value: catalog.inStockOnly,
+              onChanged: (v) => context.read<CatalogProvider>().setInStockOnly(v),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 4, 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.productName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.read<CatalogProvider>()
+                        ..setSort(ProductSort.featured)
+                        ..setInStockOnly(false);
+                    },
+                    child: const Text('Reset'),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    product.category,
-                    style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Done'),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          formatMoney(product.price),
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.burgundy,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Add to cart',
-                        onPressed: available
-                            ? () {
-                                context.read<CartProvider>().add(product);
-                                showAppSnack(
-                                  context,
-                                  '${product.productName} added to cart',
-                                );
-                              }
-                            : null,
-                        icon: const Icon(Icons.add_shopping_cart),
-                        color: AppColors.burgundy,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),

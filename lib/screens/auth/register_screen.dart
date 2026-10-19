@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import '../../core/app_exception.dart';
 import '../../core/validators.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/measurement_form.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _address = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
+  final _measurements = MeasurementControllers();
   bool _obscure = true;
   bool _busy = false;
 
@@ -32,6 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _address.dispose();
     _password.dispose();
     _confirm.dispose();
+    _measurements.dispose();
     super.dispose();
   }
 
@@ -48,6 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: _phone.text,
         address: _address.text,
         password: _password.text,
+        measurements: _measurements.toMeasurements(),
       );
       // Account created and signed in: return to the root so AuthGate shows
       // the customer home screen.
@@ -149,6 +154,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: Icon(Icons.lock_outline),
                       ),
                       validator: Validators.confirmPassword(() => _password.text),
+                    ),
+                    const SizedBox(height: 20),
+                    Card(
+                      child: Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+                          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          leading: const Icon(Icons.straighten, color: AppColors.burgundy),
+                          title: const Text('Body measurements (optional)',
+                              style: TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: const Text('Save them now for faster tailoring orders'),
+                          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                          children: [MeasurementFormSection(controllers: _measurements)],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     PrimaryButton(

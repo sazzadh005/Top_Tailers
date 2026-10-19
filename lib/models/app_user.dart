@@ -1,7 +1,12 @@
+import 'measurements.dart';
+
 enum UserRole { customer, admin }
 
-/// Mirrors the `users` Firestore collection in the SRS
-/// (name, email, phone, address, profileImage, role, createdAt).
+/// Mirrors the `users` collection in the SRS (name, email, phone, address,
+/// profileImage, role, createdAt) plus saved body measurements.
+///
+/// This is the *editable profile*. Orders keep their own snapshots of the
+/// contact number, address and measurements.
 class AppUser {
   const AppUser({
     required this.id,
@@ -12,6 +17,7 @@ class AppUser {
     required this.role,
     required this.createdAt,
     this.profileImage,
+    this.measurements = BodyMeasurements.empty,
   });
 
   final String id;
@@ -22,6 +28,7 @@ class AppUser {
   final String? profileImage;
   final UserRole role;
   final DateTime createdAt;
+  final BodyMeasurements measurements;
 
   bool get isAdmin => role == UserRole.admin;
 
@@ -39,6 +46,7 @@ class AppUser {
     String? address,
     String? profileImage,
     bool clearProfileImage = false,
+    BodyMeasurements? measurements,
   }) {
     return AppUser(
       id: id,
@@ -49,6 +57,7 @@ class AppUser {
       profileImage: clearProfileImage ? null : (profileImage ?? this.profileImage),
       role: role,
       createdAt: createdAt,
+      measurements: measurements ?? this.measurements,
     );
   }
 }

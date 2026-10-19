@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../core/theme.dart';
 import '../models/order.dart';
+import '../models/payment.dart';
+import '../models/requests.dart';
 
 /// Shows a floating snackbar. Use [error] for failures.
 void showAppSnack(BuildContext context, String message, {bool error = false}) {
@@ -194,6 +196,37 @@ class ErrorState extends StatelessWidget {
   }
 }
 
+/// Section title with an optional trailing action ("See all").
+class SectionHeader extends StatelessWidget {
+  const SectionHeader({super.key, required this.title, this.actionLabel, this.onAction});
+
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          ),
+          if (actionLabel != null && onAction != null)
+            TextButton(onPressed: onAction, child: Text(actionLabel!)),
+        ],
+      ),
+    );
+  }
+}
+
 /// Horizontal single-select chips (categories, order status filters).
 class FilterChips extends StatelessWidget {
   const FilterChips({
@@ -252,98 +285,90 @@ Color statusColor(OrderStatus status) {
   }
 }
 
-class StatusChip extends StatelessWidget {
-  const StatusChip({super.key, required this.status});
+Color paymentColor(PaymentStatus status) {
+  switch (status) {
+    case PaymentStatus.pending:
+      return AppColors.warning;
+    case PaymentStatus.successful:
+      return AppColors.success;
+    case PaymentStatus.failed:
+      return AppColors.danger;
+    case PaymentStatus.cancelled:
+      return AppColors.muted;
+  }
+}
 
-  final OrderStatus status;
+Color requestStatusColor(RequestStatus status) {
+  switch (status) {
+    case RequestStatus.received:
+      return AppColors.info;
+    case RequestStatus.underReview:
+      return AppColors.warning;
+    case RequestStatus.planned:
+      return AppColors.success;
+    case RequestStatus.declined:
+      return AppColors.danger;
+  }
+}
+
+/// Small coloured pill used for statuses.
+class Pill extends StatelessWidget {
+  const Pill({super.key, required this.label, required this.color, this.icon});
+
+  final String label;
+  final Color color;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final color = statusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        status.label,
-        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 4)],
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-IconData categoryIcon(String category) {
-  switch (category) {
-    case 'Fabrics':
-      return Icons.texture;
-    case 'Readymade':
-      return Icons.checkroom;
-    case 'Tailoring':
-      return Icons.content_cut;
-    default:
-      return Icons.style_outlined;
-  }
-}
+/// Order (fulfilment) status chip.
+class StatusChip extends StatelessWidget {
+  const StatusChip({super.key, required this.status});
 
-Color categoryColor(String category) {
-  switch (category) {
-    case 'Fabrics':
-      return const Color(0xFFEADFD0);
-    case 'Readymade':
-      return const Color(0xFFE3D5DA);
-    case 'Tailoring':
-      return const Color(0xFFD9E2E8);
-    default:
-      return const Color(0xFFE4E6D6);
-  }
-}
-
-/// Product picture: the uploaded image if there is one, otherwise a tidy
-/// category placeholder.
-class ProductImage extends StatelessWidget {
-  const ProductImage({
-    super.key,
-    required this.category,
-    this.imagePath,
-    this.borderRadius = 12,
-    this.iconSize = 40,
-  });
-
-  final String category;
-  final String? imagePath;
-  final double borderRadius;
-  final double iconSize;
+  final OrderStatus status;
 
   @override
-  Widget build(BuildContext context) {
-    final placeholder = Container(
-      color: categoryColor(category),
-      alignment: Alignment.center,
-      child: Icon(
-        categoryIcon(category),
-        size: iconSize,
-        color: AppColors.burgundy.withValues(alpha: 0.55),
-      ),
-    );
+  Widget build(BuildContext context) =>
+      Pill(label: status.label, color: statusColor(status));
+}
 
-    Widget content = placeholder;
-    final path = imagePath;
-    if (path != null && path.isNotEmpty) {
-      content = Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => placeholder,
+/// Payment status chip, kept separate from the order status.
+class PaymentChip extends StatelessWidget {
+  const PaymentChip({super.key, required this.payment});
+
+  final PaymentRecord payment;
+
+  @override
+  Widget build(BuildContext context) => Pill(
+        label: payment.statusLabel,
+        color: paymentColor(payment.status),
+        icon: payment.method == PaymentMethod.cod
+            ? Icons.payments_outlined
+            : Icons.credit_card,
       );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: content,
-    );
-  }
 }
 
 /// Small label/value row used in detail screens.
@@ -404,6 +429,170 @@ class BrandMark extends StatelessWidget {
         size: size * 0.5,
         color: onDark ? AppColors.burgundyDark : Colors.white,
       ),
+    );
+  }
+}
+
+/// Pulsing grey placeholder shown while content loads.
+class SkeletonBox extends StatefulWidget {
+  const SkeletonBox({super.key, this.height, this.width, this.radius = 12});
+
+  final double? height;
+  final double? width;
+  final double radius;
+
+  @override
+  State<SkeletonBox> createState() => _SkeletonBoxState();
+}
+
+class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          height: widget.height,
+          width: widget.width,
+          decoration: BoxDecoration(
+            color: Color.lerp(const Color(0xFFEDE6DA), const Color(0xFFE2D9CA), _controller.value),
+            borderRadius: BorderRadius.circular(widget.radius),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Read-only star display.
+class StarRating extends StatelessWidget {
+  const StarRating({super.key, required this.rating, this.size = 16});
+
+  final double rating;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 1; i <= 5; i++)
+          Icon(
+            rating >= i
+                ? Icons.star
+                : (rating >= i - 0.5 ? Icons.star_half : Icons.star_border),
+            size: size,
+            color: AppColors.gold,
+          ),
+      ],
+    );
+  }
+}
+
+/// Tappable 1-5 star input.
+class StarPicker extends StatelessWidget {
+  const StarPicker({super.key, required this.value, required this.onChanged});
+
+  final int value;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 1; i <= 5; i++)
+          IconButton(
+            tooltip: '$i star${i == 1 ? '' : 's'}',
+            onPressed: () => onChanged(i),
+            iconSize: 34,
+            icon: Icon(
+              value >= i ? Icons.star : Icons.star_border,
+              color: AppColors.gold,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Banner reminding users that a flow is a demonstration.
+class DemoNotice extends StatelessWidget {
+  const DemoNotice({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.science_outlined, size: 20, color: AppColors.warning),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.ink),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Single-choice row (radio look) built from stable widgets.
+class ChoiceTile<T> extends StatelessWidget {
+  const ChoiceTile({
+    super.key,
+    required this.value,
+    required this.groupValue,
+    required this.title,
+    required this.onChanged,
+    this.subtitle,
+    this.enabled = true,
+  });
+
+  final T value;
+  final T? groupValue;
+  final String title;
+  final String? subtitle;
+  final bool enabled;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = value == groupValue;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      enabled: enabled,
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+        color: !enabled
+            ? AppColors.border
+            : (selected ? AppColors.burgundy : AppColors.muted),
+      ),
+      title: Text(title, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      subtitle: subtitle == null ? null : Text(subtitle!),
+      onTap: enabled ? () => onChanged(value) : null,
     );
   }
 }

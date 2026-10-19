@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppColors {
   AppColors._();
@@ -39,23 +40,31 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.cream,
+      visualDensity: VisualDensity.standard,
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.burgundy,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.cream,
+        foregroundColor: AppColors.ink,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         titleTextStyle: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          color: AppColors.ink,
+          letterSpacing: -0.2,
         ),
       ),
       cardTheme: CardThemeData(
         color: Colors.white,
-        elevation: 1,
+        elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFEBE4D8)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -117,4 +126,15 @@ class AppTheme {
       dividerTheme: const DividerThemeData(color: AppColors.border, space: 1),
     );
   }
+}
+
+/// Shared spacing scale so screens stay visually consistent.
+class AppSpacing {
+  AppSpacing._();
+
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
+  static const EdgeInsets page = EdgeInsets.symmetric(horizontal: 16);
 }
