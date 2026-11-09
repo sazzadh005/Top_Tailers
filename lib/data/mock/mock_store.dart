@@ -66,6 +66,9 @@ class MockStore {
   final Map<String, CustomerDiscount> customerDiscounts = {};
   final Map<String, Set<String>> wishlists = {};
 
+  /// idempotency key -> order id (per user), so a retried placeOrder is safe.
+  final Map<String, String> idempotency = {};
+
   Product? productById(String id) {
     for (final p in products) {
       if (p.id == id) return p;

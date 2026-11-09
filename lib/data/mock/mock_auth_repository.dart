@@ -1,5 +1,7 @@
 import '../../core/app_exception.dart';
+import '../../domain/spending.dart';
 import '../../models/app_user.dart';
+import '../../models/customer_summary.dart';
 import '../../models/measurements.dart';
 import '../../repositories/repositories.dart';
 import 'mock_store.dart';
@@ -86,11 +88,35 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<List<AppUser>> getCustomers({required AppUser actor}) async {
+  Future<List<CustomerSummary>> getCustomerSummaries({required AppUser actor}) async {
     await _store.wait();
     if (!actor.isAdmin) throw AppException('Only the shop admin can view customers.');
     final list = _store.users.where((u) => u.role == UserRole.customer).toList();
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
+    return [
+      for (final u in list)
+        CustomerSummary(
+          user: u,
+          orderCount: SpendingCalculator.orderCount(_store.orders.where((o) => o.userId == u.id)),
+          lifetimeSpendingMinor:
+              SpendingCalculator.lifetimeSpendingMinor(_store.orders.where((o) => o.userId == u.id)),
+        ),
+    ];
   }
+
+  // The mock keeps no session; a real backend restores one here.
+  @override
+  Future<AppUser?> restoreSession() async => null;
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  Future<void> updatePassword(String newPassword) async {}
+
+  @override
+  Stream<void> get passwordRecoveryEvents => const Stream<void>.empty();
+
+  @override
+  Stream<void> get sessionEndedEvents => const Stream<void>.empty();
 }

@@ -57,8 +57,9 @@ class DiscountEditor extends StatelessWidget {
         (price == null
             ? DiscountMath.validateGeneral(kind, value) == null
             : DiscountMath.validateForPrice(kind, value, price) == null);
-    final amount =
-        (valid && value != null && price != null) ? DiscountMath.amount(kind, value, price) : 0;
+    final amount = valid && price != null
+          ? DiscountMath.amount(kind, value, price)
+          : 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

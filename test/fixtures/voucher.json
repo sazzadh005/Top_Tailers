@@ -1,0 +1,12 @@
+{
+  "code": "DEMOFAB15",
+  "kind": "percent",
+  "title": "Demo fabrics 15%",
+  "value": 15,
+  "isActive": true,
+  "isPublic": true,
+  "expiresAt": null,
+  "categories": [
+    "Fabrics"
+  ]
+}

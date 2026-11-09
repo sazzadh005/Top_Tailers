@@ -1,6 +1,8 @@
 import '../models/app_notification.dart';
 import '../models/app_user.dart';
 import '../models/catalog_query.dart';
+import '../models/customer_summary.dart';
+import '../models/uploaded_image.dart';
 import '../models/customer_discount.dart';
 import '../models/feedback.dart';
 import '../models/measurements.dart';
@@ -10,6 +12,7 @@ import '../models/product.dart';
 import '../models/requests.dart';
 import '../models/voucher.dart';
 import '../domain/order_search.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// These interfaces are the seam between the UI and a future backend.
 /// Mock implementations live in lib/data/mock. A REST/Firebase implementation
@@ -31,6 +34,19 @@ abstract class AuthRepository {
   Future<void> sendPasswordReset(String email);
   Future<AppUser> updateProfile(AppUser updated);
 
+  /// Restores a persisted session at app start, or null when signed out.
+  Future<AppUser?> restoreSession();
+  Future<void> logout();
+
+  /// Sets a new password after the reset-email link was opened.
+  Future<void> updatePassword(String newPassword);
+
+  /// Fires when the app was opened from a password-reset link.
+  Stream<void> get passwordRecoveryEvents;
+
+  /// Fires when the session ended (sign-out elsewhere, expired refresh token).
+  Stream<void> get sessionEndedEvents;
+
   /// Customers may update their own; admins may update any customer's.
   Future<AppUser> updateMeasurements(
     String customerId,
@@ -38,8 +54,9 @@ abstract class AuthRepository {
     required AppUser actor,
   });
 
-  /// Admin only.
-  Future<List<AppUser>> getCustomers({required AppUser actor});
+  /// Admin only. Includes each customer's order count and server-calculated
+  /// Lifetime Spending.
+  Future<List<CustomerSummary>> getCustomerSummaries({required AppUser actor});
 }
 
 abstract class CatalogRepository {
@@ -83,6 +100,10 @@ abstract class OrderRepository {
     String note = '',
   });
   Future<AppOrder> updateStatus(String orderId, OrderStatus status);
+  Future<AppOrder> getOrder(String orderId);
+
+  /// DEMO ONLY. A real backend never lets a client set payment state: the
+  /// server records it after verifying with the payment provider.
   Future<AppOrder> updatePayment(
     String orderId,
     PaymentStatus status, {
@@ -97,16 +118,26 @@ abstract class NotificationRepository {
   Future<void> markAllRead(String userId);
 }
 
-/// Replaceable payment gateway. The real SSLCommerz implementation must live
-/// on/through the backend: merchant credentials, transaction initiation,
-/// callback verification and payment validation must never be in the app.
+/// Replaceable payment gateway. The real AamarPay implementation lives behind
+/// the backend: merchant credentials, transaction initiation, callback
+/// verification and payment validation never touch the app.
 abstract class PaymentGateway {
   bool get isDemo;
   String get displayName;
+  /// [amountMinor] is for display only: a real gateway takes the amount from
+  /// the stored order on the server.
   Future<PaymentSession> initiate({
     required String orderId,
     required int amountMinor,
+    String? idempotencyKey,
   });
+}
+
+/// Uploads images to the image host (Cloudinary). Real uploads are authorised
+/// by a server-signed ticket; the app never holds the API secret.
+abstract class ImageUploader {
+  Future<UploadedImage> uploadProductImage(XFile image);
+  Future<UploadedImage> uploadAvatar(XFile image);
 }
 
 abstract class FeedbackRepository {

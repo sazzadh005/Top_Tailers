@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../app/app_services.dart';
 import '../../core/app_exception.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
@@ -20,7 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
   late final TextEditingController _address;
-  String? _newImage;
+  XFile? _newImage;
   bool _removeImage = false;
   bool _busy = false;
 
@@ -42,10 +44,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final path = await pickImagePath(context);
-    if (path != null && mounted) {
+    final image = await pickImagePath(context);
+    if (image != null && mounted) {
       setState(() {
-        _newImage = path;
+        _newImage = image;
         _removeImage = false;
       });
     }
@@ -57,13 +59,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final auth = context.read<AuthProvider>();
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final uploader = context.read<AppServices>().images;
     setState(() => _busy = true);
     try {
+      String? imageUrl;
+      String? imageId;
+      final picked = _newImage;
+      if (picked != null) {
+        final up = await uploader.uploadAvatar(picked);
+        imageUrl = up.url;
+        imageId = up.publicId;
+      }
       await auth.updateProfile(
         name: _name.text,
         phone: _phone.text,
         address: _address.text,
-        profileImage: _newImage,
+        profileImage: imageUrl,
+        profileImagePublicId: imageId,
         clearProfileImage: _removeImage,
       );
       navigator.pop();

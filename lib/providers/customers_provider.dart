@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/app_user.dart';
 import '../models/customer_discount.dart';
+import '../models/customer_summary.dart';
 import '../models/measurements.dart';
 import '../repositories/repositories.dart';
 import 'load_state.dart';
@@ -15,12 +16,20 @@ class CustomersProvider extends ChangeNotifier {
   final DiscountRepository _discounts;
 
   AppUser? _admin;
-  List<AppUser> _customers = [];
+  List<CustomerSummary> _summaries = [];
   Map<String, CustomerDiscount> _discountMap = {};
   LoadState _state = LoadState.idle;
   String? _error;
 
-  List<AppUser> get customers => _customers;
+  List<AppUser> get customers => [for (final s in _summaries) s.user];
+
+  /// Order count and Lifetime Spending as calculated by the server.
+  CustomerSummary? summaryFor(String customerId) {
+    for (final s in _summaries) {
+      if (s.user.id == customerId) return s;
+    }
+    return null;
+  }
   LoadState get state => _state;
   String? get error => _error;
 
@@ -28,10 +37,7 @@ class CustomersProvider extends ChangeNotifier {
   List<CustomerDiscount> get discounts => _discountMap.values.toList();
 
   AppUser? byId(String id) {
-    for (final c in _customers) {
-      if (c.id == id) return c;
-    }
-    return null;
+    return summaryFor(id)?.user;
   }
 
   Future<void> load(AppUser admin) async {
@@ -40,9 +46,9 @@ class CustomersProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final customers = await _auth.getCustomers(actor: admin);
+      final summaries = await _auth.getCustomerSummaries(actor: admin);
       final discounts = await _discounts.listCustomerDiscounts();
-      _customers = customers;
+      _summaries = summaries;
       _discountMap = {for (final d in discounts) d.customerId: d};
       _state = LoadState.ready;
     } catch (e) {
@@ -68,13 +74,13 @@ class CustomersProvider extends ChangeNotifier {
     final admin = _admin;
     if (admin == null) return;
     final updated = await _auth.updateMeasurements(customerId, m, actor: admin);
-    _customers = [for (final c in _customers) c.id == customerId ? updated : c];
+    _summaries = [for (final s in _summaries) s.user.id == customerId ? s.withUser(updated) : s];
     notifyListeners();
   }
 
   void reset() {
     _admin = null;
-    _customers = [];
+    _summaries = [];
     _discountMap = {};
     _state = LoadState.idle;
     notifyListeners();

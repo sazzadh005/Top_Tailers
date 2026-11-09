@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_services.dart';
 import '../../core/app_exception.dart';
 import '../../core/app_strings.dart';
 import '../../core/theme.dart';
@@ -147,6 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
+                    if (context.read<AppServices>().isDemoData) ...[
                     const SizedBox(height: 12),
                     const Divider(),
                     const SizedBox(height: 12),
@@ -178,6 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
+                    ],
                   ],
                 ),
               ),

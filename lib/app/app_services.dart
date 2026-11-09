@@ -2,6 +2,7 @@ import '../data/demo_payment_gateway.dart';
 import '../data/mock/mock_auth_repository.dart';
 import '../data/mock/mock_catalog_repository.dart';
 import '../data/mock/mock_engagement_repositories.dart';
+import '../data/mock/mock_image_uploader.dart';
 import '../data/mock/mock_order_repository.dart';
 import '../data/mock/mock_pricing_repositories.dart';
 import '../data/mock/mock_store.dart';
@@ -22,6 +23,8 @@ class AppServices {
     required this.feedback,
     required this.requests,
     required this.wishlist,
+    required this.images,
+    this.isDemoData = false,
   });
 
   final AuthRepository auth;
@@ -34,6 +37,11 @@ class AppServices {
   final FeedbackRepository feedback;
   final RequestRepository requests;
   final WishlistRepository wishlist;
+  final ImageUploader images;
+
+  /// True only for the in-memory mock. Drives the "demo data" banner and
+  /// hides demo-only helpers (sample logins, demo voucher codes) in real mode.
+  final bool isDemoData;
 
   /// Demonstration services backed by in-memory mock data.
   factory AppServices.mock({
@@ -52,6 +60,8 @@ class AppServices {
       feedback: MockFeedbackRepository(store),
       requests: MockRequestRepository(store),
       wishlist: MockWishlistRepository(store),
+      images: MockImageUploader(),
+      isDemoData: true,
     );
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "top-tailers-backend",
+  "version": "1.0.0",
+  "description": "Supabase backend for Top Tailers & Fabrics: SQL migrations, Edge Functions and their tests.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs && tsx --test tests/edge/*.test.ts",
+    "test:sql": "node --test tests/*.test.mjs",
+    "test:edge": "tsx --test tests/edge/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "fixtures": "node tests/export_fixtures.mjs ../test/fixtures",
+    "contract": "python3 tools/contract_check.py .."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}

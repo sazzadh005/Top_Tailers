@@ -34,6 +34,10 @@ class MockOrderRepository implements OrderRepository {
   @override
   Future<AppOrder> placeOrder(PlaceOrderRequest r) async {
     await _store.wait(2);
+    final idemKey = r.idempotencyKey == null ? null : '${r.userId}|${r.idempotencyKey}';
+    if (idemKey != null && _store.idempotency.containsKey(idemKey)) {
+      return _get(_store.idempotency[idemKey]!);   // a retry returns the original order
+    }
     if (r.items.isEmpty) throw AppException('Your cart is empty.');
     final phoneError = Validators.phone(r.contactPhone);
     if (phoneError != null) throw AppException('Contact number: $phoneError');
@@ -139,12 +143,19 @@ class MockOrderRepository implements OrderRepository {
       history: [OrderEvent(status: OrderStatus.pending, at: now)],
     );
     _store.orders.insert(0, order);
+    if (idemKey != null) _store.idempotency[idemKey] = order.id;
     _store.notify(
       r.userId,
       'Order placed',
       'Your order ${order.id} was received and is waiting for confirmation.',
     );
     return order;
+  }
+
+  @override
+  Future<AppOrder> getOrder(String orderId) async {
+    await _store.wait();
+    return _get(orderId);
   }
 
   @override

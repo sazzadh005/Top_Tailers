@@ -1,0 +1,13 @@
+[
+  {
+    "id": "d59226de-ac2c-463f-bda2-81b10f77f338",
+    "rating": 5,
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "comment": "Fixture feedback comment",
+    "orderId": "c00e391a-fef3-470b-a5b8-c4194e492c0a",
+    "userName": "Rahim Uddin",
+    "createdAt": "2026-11-06T22:42:08.395+00:00",
+    "productId": "8a2c20e9-dc02-45d8-a137-c486557c5095",
+    "productName": "Shirt Stitching Service"
+  }
+]

@@ -1,12 +1,26 @@
 # Top Tailers & Fabrics
 
 Flutter (Android) app for a tailoring and fabrics shop: customer shopping and a Shop Admin area.
-Frontend phase: everything runs on **in-memory mock data**; no backend, database or live payment exists yet.
+The app runs against a real **Supabase** backend (Postgres + Auth + Edge Functions) with **AamarPay** payments
+and **Cloudinary** images. An opt-in in-memory demo mode remains for offline demonstrations.
+
+## Run it
+
+```bash
+# real backend (after following docs/BACKEND_SETUP.md)
+flutter pub get
+flutter run --dart-define=SUPABASE_URL=https://<ref>.supabase.co --dart-define=SUPABASE_ANON_KEY=<anon key>
+
+# offline demo with sample data (shows a DEMO DATA banner)
+flutter run --dart-define=USE_MOCK_DATA=true
+```
+With neither, the app shows a "Backend not configured" screen rather than pretending to have data.
+`flutter analyze` and `flutter test` have **not** been run by the author (no Flutter SDK was available); see `docs/TEST_REPORT.md`.
 
 - Requirement-to-screen checklist and discount stacking rules: `docs/REQUIREMENTS_CHECKLIST.md`
-- What the backend must still do: `docs/BACKEND_INTEGRATION.md`
+- How the app talks to the backend: `docs/BACKEND_INTEGRATION.md`; setup: `docs/BACKEND_SETUP.md`; feature map: `docs/FEATURE_BACKEND_MAP.md`; security and blockers: `docs/BLOCKERS_AND_SECURITY.md`; verification: `docs/TEST_REPORT.md`
 
-## Demo accounts (frontend demonstration only, not secure authentication)
+## Demo accounts (demo mode only: `USE_MOCK_DATA=true`; not real authentication)
 
 | Role | Email | Password | Notes |
 |---|---|---|---|
@@ -48,5 +62,6 @@ test/            pricing, vouchers, discounts, retention, search, spending, snap
 Key decisions
 - Money is an integer number of paisa everywhere; there is no floating-point money.
 - Orders own snapshots of contact number, address, note, measurements, prices and voucher; editing a profile never changes them.
-- Online payment is a labelled demonstration. `PaymentGateway` is the seam for a future SSLCommerz integration via the backend.
+- Online payment uses **AamarPay** through the backend (`AamarPayGateway`): the server starts and verifies every payment. In demo mode (`USE_MOCK_DATA=true`) payment is a labelled demonstration.
+- The real backend is **Supabase** (see `docs/BACKEND_SETUP.md`, `docs/FEATURE_BACKEND_MAP.md`, `docs/BLOCKERS_AND_SECURITY.md`, `docs/TEST_REPORT.md`). Run with `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...`.
 - Role-based screens are a convenience; real authorization belongs to the backend.

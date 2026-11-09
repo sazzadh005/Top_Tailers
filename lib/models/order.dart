@@ -217,6 +217,7 @@ class PlaceOrderRequest {
     this.voucherCode,
     required this.paymentMethod,
     required this.expectedTotalMinor,
+    this.idempotencyKey,
   });
 
   final String userId;
@@ -232,6 +233,9 @@ class PlaceOrderRequest {
   final String? voucherCode;
   final PaymentMethod paymentMethod;
   final int expectedTotalMinor;
+
+  /// Makes a retried request return the original order instead of a duplicate.
+  final String? idempotencyKey;
 }
 
 class OrderLineRequest {

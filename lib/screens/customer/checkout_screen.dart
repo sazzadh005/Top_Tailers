@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/app_exception.dart';
+import '../../core/idempotency.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/validators.dart';
@@ -16,7 +17,7 @@ import '../../widgets/price_breakdown_card.dart';
 import '../../widgets/product_widgets.dart';
 import '../../widgets/voucher_panel.dart';
 import 'order_success_screen.dart';
-import 'payment_demo_screen.dart';
+import 'payment_router.dart';
 
 enum _MeasureMode { saved, order, other }
 
@@ -44,6 +45,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   PaymentMethod _method = PaymentMethod.cod;
   String? _measureError;
   bool _busy = false;
+
+  /// One key per checkout screen: if the network drops after the server created
+  /// the order, tapping again returns that order instead of a duplicate.
+  final String _idempotencyKey = newIdempotencyKey();
 
   @override
   void initState() {
@@ -131,6 +136,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         note: _note.text,
         measurements: snapshot,
         method: _method,
+        idempotencyKey: _idempotencyKey,
       );
       cart.clear();
       // Saving the number to the profile is opt-in and never affects the
@@ -149,8 +155,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       if (!mounted) return;
       navigator.pushReplacement(
         MaterialPageRoute<void>(
-          builder: (_) => order.payment.method == PaymentMethod.online
-              ? PaymentDemoScreen(orderId: order.id)
+          builder: (routeContext) => order.payment.method == PaymentMethod.online
+              ? paymentScreenFor(routeContext, order.id)
               : OrderSuccessScreen(orderId: order.id),
         ),
       );
@@ -374,12 +380,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         duration: const Duration(milliseconds: 200),
                         alignment: Alignment.topCenter,
                         child: _method == PaymentMethod.online
-                            ? const Padding(
-                                padding: EdgeInsets.only(top: 8),
-                                child: DemoNotice(
-                                  message:
-                                      'Online payment is a DEMONSTRATION in this version. A real gateway (SSLCommerz) is not connected, no payment is taken and no card or wallet details are collected. Your order is placed first; payment is a separate step.',
-                                ),
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: context.read<OrdersProvider>().isDemoGateway
+                                    ? const DemoNotice(
+                                        message:
+                                            'Online payment is a DEMONSTRATION here. No payment is taken and no card or wallet details are collected. Your order is placed first; payment is a separate step.',
+                                      )
+                                    : Text(
+                                        'You will be taken to AamarPay\u2019s secure payment page. Your order is placed first, and it is marked paid only after the payment is verified.',
+                                        style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                                      ),
                               )
                             : const SizedBox(width: double.infinity),
                       ),

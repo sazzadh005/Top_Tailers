@@ -26,8 +26,8 @@ extension PaymentStatusX on PaymentStatus {
 /// Which system produced a payment record.
 ///  - none:       cash on delivery, no gateway involved
 ///  - demo:       the frontend demonstration flow (NOT a real payment)
-///  - sslcommerz: reserved for the future verified SSLCommerz integration
-enum PaymentProvider { none, demo, sslcommerz }
+///  - aamarpay:   a payment verified server-side through AamarPay
+enum PaymentProvider { none, demo, aamarpay }
 
 class PaymentRecord {
   const PaymentRecord({

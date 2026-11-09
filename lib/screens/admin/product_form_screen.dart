@@ -1,8 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 
+
+import '../../app/app_services.dart';
 import '../../core/app_exception.dart';
 import '../../core/money.dart';
 import '../../core/theme.dart';
@@ -10,6 +11,7 @@ import '../../core/validators.dart';
 import '../../domain/discount.dart';
 import '../../models/product.dart';
 import '../../providers/catalog_provider.dart';
+import '../../widgets/app_image.dart';
 import '../../widgets/common.dart';
 import '../../widgets/discount_editor.dart';
 
@@ -67,7 +69,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late bool _requiresMeasurements;
   late bool _discountEnabled;
   late DiscountKind _discountKind;
-  late List<String> _images;
+  late List<Object> _images;
+
+  /// Cloudinary public id for each already-uploaded image URL.
+  final Map<String, String> _publicIds = {};
+  String? _status;
   bool _busy = false;
   String? _codeError;
 
@@ -101,7 +107,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     _availability = p?.availability ?? true;
     _featured = p?.isFeatured ?? false;
     _requiresMeasurements = p?.requiresMeasurements ?? false;
-    _images = List<String>.of(p?.imagePaths ?? const []);
+    _images = List<Object>.of(p?.imagePaths ?? const []);
+    if (p != null) {
+      for (var i = 0; i < p.imagePaths.length && i < p.imagePublicIds.length; i++) {
+        _publicIds[p.imagePaths[i]] = p.imagePublicIds[i];
+      }
+    }
     final d = p?.discount;
     _discountEnabled = d?.enabled ?? false;
     _discountKind = d?.kind ?? DiscountKind.percent;
@@ -134,8 +145,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       showAppSnack(context, 'You can add up to 4 images.', error: true);
       return;
     }
-    final path = await pickImagePath(context);
-    if (path != null && mounted) setState(() => _images.add(path));
+
+    final image = await pickImagePath(context);
+
+    if (image != null && mounted) {
+      setState(() => _images.add(image));
+    }
   }
 
   Future<void> _save() async {
@@ -187,6 +202,51 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         FabricColor(name: name, argb: _knownColors[name.toLowerCase()] ?? 0xFF9E9E9E),
     ];
 
+    // Images: new local photos are uploaded to Cloudinary with a server-signed
+    // ticket. Uploaded entries replace the local path at once, so a retry after
+    // a failed save never uploads the same photo twice.
+    final uploader = context.read<AppServices>().images;
+    setState(() {
+      _busy = true;
+      _status = null;
+    });
+    final urls = <String>[];
+    final publicIds = <String>[];
+    try {
+        for (var i = 0; i < _images.length; i++) {
+          final image = _images[i];
+
+          if (image is String && AppImage.isRemote(image)) {
+            urls.add(image);
+            publicIds.add(_publicIds[image] ?? '');
+            continue;
+          }
+
+          if (image is! XFile) continue;
+
+          setState(() => _status = 'Uploading image ${i + 1} of ${_images.length}...');
+
+          final up = await uploader.uploadProductImage(image);
+
+          if (!mounted) return;
+
+          _publicIds[up.url] = up.publicId;
+          setState(() => _images[i] = up.url);
+
+          urls.add(up.url);
+          publicIds.add(up.publicId);
+        }
+    } catch (e) {
+      if (mounted) {
+        showAppSnack(context, errorText(e), error: true);
+        setState(() {
+          _busy = false;
+          _status = null;
+        });
+      }
+      return;
+    }
+
     final existing = widget.product;
     final draft = Product(
       id: existing?.id ?? '',
@@ -196,7 +256,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       priceMinor: price,
       category: _category,
       availability: _availability,
-      imagePaths: _images,
+      imagePaths: urls,
+      imagePublicIds: publicIds,
       colors: colors,
       sizes: _category == 'Readymade' ? _split(_sizes.text) : const [],
       specs: specs,
@@ -255,18 +316,40 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.file(
-                                File(_images[i]),
-                                height: 92,
-                                width: 92,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stack) => Container(
-                                  height: 92,
-                                  width: 92,
-                                  color: AppColors.border,
-                                  child: const Icon(Icons.broken_image_outlined),
-                                ),
-                              ),
+                              child: _images[i] is XFile
+                                  ? FutureBuilder(
+                                      future: (_images[i] as XFile).readAsBytes(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Image.memory(
+                                            snapshot.data!,
+                                            height: 92,
+                                            width: 92,
+                                            fit: BoxFit.cover,
+                                          );
+                                        }
+
+                                        return Container(
+                                          height: 92,
+                                          width: 92,
+                                          color: AppColors.border,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : AppImage(
+                                      source: _images[i] as String,
+                                      height: 92,
+                                      width: 92,
+                                      fallback: Container(
+                                        height: 92,
+                                        width: 92,
+                                        color: AppColors.border,
+                                        child: const Icon(Icons.broken_image_outlined),
+                                      ),
+                                    ),
                             ),
                             Positioned(
                               right: 2,
@@ -479,6 +562,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 busy: _busy,
                 onPressed: _save,
               ),
+              if (_status != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(child: Text(_status!, style: textTheme.bodySmall)),
+                ),
               const SizedBox(height: 8),
             ],
           ),

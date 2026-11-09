@@ -1,0 +1,27 @@
+# Supabase project configuration (used by `supabase start` / `supabase link` + `supabase config push`).
+project_id = "top-tailers"
+
+[auth]
+site_url = "io.supabase.toptailers://login-callback/"
+additional_redirect_urls = ["io.supabase.toptailers://login-callback/"]
+minimum_password_length = 8
+enable_signup = true
+
+[auth.email]
+# The app signs customers in right after registration, so email confirmation is OFF.
+# Turn it ON and add a "check your email" step if you want verified addresses.
+enable_confirmations = false
+
+[functions.payments-initiate]
+verify_jwt = true
+
+# Public on purpose: AamarPay and the customer's browser call it without a Supabase JWT.
+# It trusts nothing in the request; every outcome is verified server-side with AamarPay.
+[functions.payments-callback]
+verify_jwt = false
+
+[functions.cloudinary-sign]
+verify_jwt = true
+
+[functions.cloudinary-cleanup]
+verify_jwt = false   # authenticates itself: admin JWT or x-cron-secret header

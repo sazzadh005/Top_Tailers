@@ -1,7 +1,6 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../core/theme.dart';
 import '../models/order.dart';
@@ -55,26 +54,33 @@ Future<bool> confirmDialog(
 
 /// Opens the gallery and returns the picked image path, or null.
 /// Enforces a 5 MB upload limit (SRS: upload limits are set).
-Future<String?> pickImagePath(BuildContext context) async {
+Future<XFile?> pickImagePath(BuildContext context) async {
   try {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       maxWidth: 1200,
       imageQuality: 80,
     );
+
     if (picked == null) return null;
-    final size = await File(picked.path).length();
+
+    final size = await picked.length();
+
     if (size > 5 * 1024 * 1024) {
       if (context.mounted) {
-        showAppSnack(context, 'Image is too large. Please choose one under 5 MB.',
-            error: true);
+        showAppSnack(
+          context,
+          'Image is too large. Please choose one under 5 MB.',
+          error: true,
+        );
       }
       return null;
     }
-    return picked.path;
-  } catch (_) {
+
+    return picked;
+  } catch (e) {
     if (context.mounted) {
-      showAppSnack(context, 'Could not open the gallery.', error: true);
+      showAppSnack(context, 'Could not process the selected image.', error: true);
     }
     return null;
   }

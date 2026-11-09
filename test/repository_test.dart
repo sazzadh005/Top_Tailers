@@ -227,7 +227,7 @@ void main() {
       const m = BodyMeasurements({MeasurementField.waist: 80});
       await expectLater(s.auth.updateMeasurements(rahim.id, m, actor: nusrat), throwsApp);
       expect((await s.auth.updateMeasurements(rahim.id, m, actor: admin)).measurements[MeasurementField.waist], 80);
-      await expectLater(s.auth.getCustomers(actor: rahim), throwsApp);
+      await expectLater(s.auth.getCustomerSummaries(actor: rahim), throwsApp);
     });
   });
 

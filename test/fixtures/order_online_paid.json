@@ -1,0 +1,50 @@
+{
+  "id": "99b39596-49cc-45c0-b8ef-073c06267a5d",
+  "note": "",
+  "items": [
+    {
+      "size": null,
+      "unit": "piece",
+      "category": "Accessories",
+      "quantity": 2,
+      "colorName": null,
+      "imagePath": null,
+      "productId": "7a5c0e5a-dae0-47ec-ad97-308aa6453e40",
+      "unitMinor": 25000,
+      "productCode": "ACC-BTN-301",
+      "productName": "Button & Thread Set",
+      "listUnitMinor": 25000
+    }
+  ],
+  "status": "pending",
+  "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+  "history": [
+    {
+      "at": "2026-11-06T22:42:08.33+00:00",
+      "status": "pending"
+    }
+  ],
+  "payment": {
+    "id": "296d47af-e33c-4f07-8c0e-9e4f2ca7b82e",
+    "method": "online",
+    "status": "successful",
+    "provider": "aamarpay",
+    "updatedAt": "2026-11-06T22:42:08.352+00:00",
+    "amountMinor": 46000,
+    "transactionRef": "PG-FIXTURE"
+  },
+  "orderDate": "2026-11-06T22:42:08.33+00:00",
+  "reference": "TTF-261107-4V2U",
+  "totalMinor": 46000,
+  "voucherCode": null,
+  "cancellation": null,
+  "contactPhone": "01712345678",
+  "customerName": "Rahim Uddin",
+  "measurements": null,
+  "deliveryMinor": 0,
+  "subtotalMinor": 50000,
+  "shippingAddress": "House 12, Road 4, Gazipur",
+  "productDiscountMinor": 0,
+  "voucherDiscountMinor": 0,
+  "customerDiscountMinor": 4000
+}

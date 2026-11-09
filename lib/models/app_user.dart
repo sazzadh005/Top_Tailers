@@ -17,6 +17,7 @@ class AppUser {
     required this.role,
     required this.createdAt,
     this.profileImage,
+    this.profileImagePublicId,
     this.measurements = BodyMeasurements.empty,
   });
 
@@ -26,6 +27,9 @@ class AppUser {
   final String phone;
   final String address;
   final String? profileImage;
+
+  /// Cloudinary public id of the profile photo (null when none or local only).
+  final String? profileImagePublicId;
   final UserRole role;
   final DateTime createdAt;
   final BodyMeasurements measurements;
@@ -45,6 +49,7 @@ class AppUser {
     String? phone,
     String? address,
     String? profileImage,
+    String? profileImagePublicId,
     bool clearProfileImage = false,
     BodyMeasurements? measurements,
   }) {
@@ -55,6 +60,9 @@ class AppUser {
       phone: phone ?? this.phone,
       address: address ?? this.address,
       profileImage: clearProfileImage ? null : (profileImage ?? this.profileImage),
+      profileImagePublicId: clearProfileImage
+          ? null
+          : (profileImagePublicId ?? this.profileImagePublicId),
       role: role,
       createdAt: createdAt,
       measurements: measurements ?? this.measurements,

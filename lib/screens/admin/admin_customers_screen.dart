@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
-import '../../domain/spending.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/customers_provider.dart';
 import '../../providers/load_state.dart';
@@ -36,7 +35,6 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CustomersProvider>();
-    final orders = context.watch<OrdersProvider>().knownOrders;
     final q = _query.trim().toLowerCase();
     final customers = provider.customers.where((c) {
       if (q.isEmpty) return true;
@@ -77,8 +75,9 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
           separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final c = customers[index];
-            final mine = orders.where((o) => o.userId == c.id).toList();
-            final spending = SpendingCalculator.lifetimeSpendingMinor(mine);
+            final summary = provider.summaryFor(c.id);
+            final orderCount = summary?.orderCount ?? 0;
+            final spending = summary?.lifetimeSpendingMinor ?? 0;
             final discount = provider.discountFor(c.id);
             return Card(
               clipBehavior: Clip.antiAlias,
@@ -111,7 +110,7 @@ class _AdminCustomersScreenState extends State<AdminCustomersScreen> {
                               runSpacing: 4,
                               children: [
                                 Pill(
-                                  label: '${SpendingCalculator.orderCount(mine)} orders',
+                                  label: '$orderCount ${orderCount == 1 ? 'order' : 'orders'}',
                                   color: AppColors.info,
                                 ),
                                 Pill(

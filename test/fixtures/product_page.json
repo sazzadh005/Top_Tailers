@@ -1,0 +1,104 @@
+{
+  "page": 1,
+  "items": [
+    {
+      "id": "8e5295d7-9e64-44bf-a88e-d1997148b703",
+      "code": "FAB-COT-001",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4294242794,
+          "name": "White"
+        },
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "percent",
+        "value": 10,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:07.914+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 90,
+      "priceMinor": 45000,
+      "description": "Soft breathable cotton",
+      "productName": "Premium Cotton Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "097e52e8-7e9a-400c-b5f0-a46cf71adedd",
+      "code": "FAB-SLK-002",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4286258746,
+          "name": "Maroon"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.964+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 70,
+      "priceMinor": 120000,
+      "description": "A good product",
+      "productName": "Silk Blend Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "f2939903-e6f6-4a62-8ddd-558a7639aa06",
+      "code": "FIX-001",
+      "unit": "yard",
+      "sizes": [
+        "M",
+        "L"
+      ],
+      "specs": {
+        "Width": "44 in",
+        "Material": "Cotton"
+      },
+      "colors": [
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "fixed",
+        "value": 5000,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:08.075+00:00",
+      "imagePaths": [
+        "https://res.cloudinary.com/hmpqmney/image/upload/v1/toptailers/products/fixture-1.jpg"
+      ],
+      "isFeatured": true,
+      "popularity": 50,
+      "priceMinor": 45000,
+      "description": "Rich fixture",
+      "productName": "Fixture Fabric",
+      "availability": true,
+      "imagePublicIds": [
+        "toptailers/products/fixture-1"
+      ],
+      "requiresMeasurements": false
+    }
+  ],
+  "total": 7,
+  "hasMore": true
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "17f51344-f2fa-49e2-8612-189aa0093135",
+    "body": "We received your online payment for order TTF-261107-4V2U.",
+    "read": false,
+    "title": "Payment received",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.352+00:00"
+  },
+  {
+    "id": "959e0287-cfc6-4c2b-8985-079e0075f81e",
+    "body": "Your order TTF-261107-4V2U was received and is waiting for confirmation.",
+    "read": false,
+    "title": "Order placed",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.33+00:00"
+  },
+  {
+    "id": "2e0a40f5-cdf0-4026-a02e-f40bb856acc8",
+    "body": "Your order TTF-261107-Q6MH has been cancelled.",
+    "read": false,
+    "title": "Order cancelled",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.312+00:00"
+  },
+  {
+    "id": "21fc108c-caff-4a8a-be70-bdc41a185d38",
+    "body": "Your order TTF-261107-Q6MH was received and is waiting for confirmation.",
+    "read": false,
+    "title": "Order placed",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.306+00:00"
+  },
+  {
+    "id": "7ae10a87-e1b5-4052-89f1-4cdc97c6c848",
+    "body": "Your order TTF-261107-YYLL is Completed. Share your feedback from the order page.",
+    "read": false,
+    "title": "Order Completed",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.291+00:00"
+  },
+  {
+    "id": "7097189f-3dee-49df-875a-092bef0aede8",
+    "body": "Your order TTF-261107-YYLL is now Processing.",
+    "read": false,
+    "title": "Order Processing",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.285+00:00"
+  },
+  {
+    "id": "0455110b-c847-45c0-8565-62fabba344fe",
+    "body": "Your order TTF-261107-YYLL is now Confirmed.",
+    "read": false,
+    "title": "Order Confirmed",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.278+00:00"
+  },
+  {
+    "id": "2218c45a-25d7-4d3f-802a-1dd0f0cea27d",
+    "body": "Your order TTF-261107-YYLL was received and is waiting for confirmation.",
+    "read": false,
+    "title": "Order placed",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:08.159+00:00"
+  },
+  {
+    "id": "a005c64c-cecd-4a21-bb50-75035781ba49",
+    "body": "Your account is ready. Start browsing our collection.",
+    "read": false,
+    "title": "Welcome to Top Tailers & Fabrics",
+    "userId": "0250b8ce-9546-4c46-a3a7-01cb77a0f9e4",
+    "createdAt": "2026-11-06T22:42:07.906+00:00"
+  }
+]

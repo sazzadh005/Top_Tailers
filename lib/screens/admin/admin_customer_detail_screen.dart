@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../core/format.dart';
 import '../../core/theme.dart';
-import '../../domain/spending.dart';
 import '../../providers/customers_provider.dart';
 import '../../providers/orders_provider.dart';
 import '../../widgets/common.dart';
@@ -42,7 +41,9 @@ class AdminCustomerDetailScreen extends StatelessWidget {
         .where((o) => o.userId == customer.id)
         .toList()
       ..sort((a, b) => b.orderDate.compareTo(a.orderDate));
-    final spending = SpendingCalculator.lifetimeSpendingMinor(orders);
+    final summary = customers.summaryFor(customer.id);
+    final spending = summary?.lifetimeSpendingMinor ?? 0;
+    final orderTotal = summary?.orderCount ?? orders.length;
     final discount = customers.discountFor(customer.id);
     final textTheme = Theme.of(context).textTheme;
 
@@ -107,7 +108,7 @@ class AdminCustomerDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${SpendingCalculator.orderCount(orders)} orders in total. Counts Completed orders with confirmed payment only; cancelled orders and pending or failed online payments are excluded. Demonstration figure from mock data, not a verified financial record.',
+                    '$orderTotal orders in total. Counts Completed orders with confirmed payment only; cancelled orders and pending or failed online payments are excluded. Demonstration figure from mock data, not a verified financial record.',
                     style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../app/app_services.dart';
 import '../core/app_exception.dart';
 import '../core/format.dart';
 import '../core/theme.dart';
@@ -189,7 +190,7 @@ class _VoucherPanelState extends State<VoucherPanel> {
                 ],
               ),
             ],
-            if (voucher == null) ...[
+            if (voucher == null && context.read<AppServices>().isDemoData) ...[
               const SizedBox(height: 10),
               Text('Demonstration codes (mock data):',
                   style: textTheme.bodySmall?.copyWith(color: AppColors.muted)),

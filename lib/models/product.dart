@@ -28,6 +28,7 @@ class Product {
     required this.category,
     required this.availability,
     this.imagePaths = const [],
+    this.imagePublicIds = const [],
     this.colors = const [],
     this.sizes = const [],
     this.specs = const {},
@@ -50,6 +51,9 @@ class Product {
   final String category;
   final bool availability;
   final List<String> imagePaths;
+
+  /// Cloudinary public ids, parallel to [imagePaths] (empty for local-only images).
+  final List<String> imagePublicIds;
   final List<FabricColor> colors;
   final List<String> sizes;
   final Map<String, String> specs;
@@ -87,6 +91,7 @@ class Product {
     String? category,
     bool? availability,
     List<String>? imagePaths,
+    List<String>? imagePublicIds,
     List<FabricColor>? colors,
     List<String>? sizes,
     Map<String, String>? specs,
@@ -106,6 +111,7 @@ class Product {
       category: category ?? this.category,
       availability: availability ?? this.availability,
       imagePaths: imagePaths ?? this.imagePaths,
+      imagePublicIds: imagePublicIds ?? this.imagePublicIds,
       colors: colors ?? this.colors,
       sizes: sizes ?? this.sizes,
       specs: specs ?? this.specs,

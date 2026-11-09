@@ -1,5 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:top_tailers_/core/app_exception.dart';
+import 'package:top_tailers_/core/idempotency.dart';
+import 'package:top_tailers_/models/app_user.dart';
+import 'package:top_tailers_/models/customer_summary.dart';
+import 'package:top_tailers_/models/measurements.dart';
+import 'package:top_tailers_/providers/customers_provider.dart';
+import 'package:top_tailers_/repositories/repositories.dart';
 import 'package:top_tailers_/domain/pricing.dart';
 import 'package:top_tailers_/models/cart_item.dart';
 import 'package:top_tailers_/models/catalog_query.dart';
@@ -14,6 +22,7 @@ import 'package:top_tailers_/providers/wishlist_provider.dart';
 import 'support.dart';
 
 void main() {
+  backendIntegrationTests();
   group('CatalogProvider (existing search preserved)', () {
     test('search, clear, category and paging', () async {
       final s = testServices();
@@ -398,6 +407,172 @@ void main() {
 
       await w.toggle(p);
       expect(w.isSaved('p1'), isFalse);
+    });
+  });
+}
+
+
+/// Auth repository that behaves like a real backend: it can restore a saved
+/// session and emits recovery / session-ended events.
+class _BackendLikeAuth implements AuthRepository {
+  _BackendLikeAuth(this.inner, {this.saved});
+
+  final AuthRepository inner;
+  AppUser? saved;
+  final recovery = StreamController<void>.broadcast();
+  final ended = StreamController<void>.broadcast();
+  String? newPassword;
+  var loggedOut = false;
+
+  @override
+  Future<AppUser?> restoreSession() async => saved;
+  @override
+  Stream<void> get passwordRecoveryEvents => recovery.stream;
+  @override
+  Stream<void> get sessionEndedEvents => ended.stream;
+  @override
+  Future<void> updatePassword(String p) async => newPassword = p;
+  @override
+  Future<void> logout() async => loggedOut = true;
+
+  @override
+  Future<AppUser> login(String e, String p) => inner.login(e, p);
+  @override
+  Future<AppUser> register({
+    required String name,
+    required String email,
+    required String phone,
+    required String address,
+    required String password,
+    BodyMeasurements measurements = BodyMeasurements.empty,
+  }) =>
+      inner.register(
+        name: name, email: email, phone: phone, address: address, password: password, measurements: measurements,
+      );
+  @override
+  Future<void> sendPasswordReset(String email) => inner.sendPasswordReset(email);
+  @override
+  Future<AppUser> updateProfile(AppUser u) => inner.updateProfile(u);
+  @override
+  Future<AppUser> updateMeasurements(String id, BodyMeasurements m, {required AppUser actor}) =>
+      inner.updateMeasurements(id, m, actor: actor);
+  @override
+  Future<List<CustomerSummary>> getCustomerSummaries({required AppUser actor}) =>
+      inner.getCustomerSummaries(actor: actor);
+}
+
+void backendIntegrationTests() {
+  group('backend-style behaviour', () {
+    test('a saved session is restored at start-up', () async {
+      final s = testServices();
+      final rahim = await loginAs(s, kRahim);
+      final a = AuthProvider(_BackendLikeAuth(s.auth, saved: rahim), splash: Duration.zero);
+      expect(a.isInitializing, isTrue);
+      await pumpEventQueue();
+      expect(a.isInitializing, isFalse);
+      expect(a.user!.email, kRahim);
+    });
+
+    test('a login that happens while restoring is not overwritten', () async {
+      final s = testServices();
+      final a = AuthProvider(_BackendLikeAuth(s.auth), splash: Duration.zero);
+      await a.login(kRahim, 'Customer@123');
+      await pumpEventQueue();
+      expect(a.user!.email, kRahim);
+    });
+
+    test('opening the reset link enters recovery; setting a password leaves it', () async {
+      final s = testServices();
+      final repo = _BackendLikeAuth(s.auth);
+      final a = AuthProvider(repo, splash: Duration.zero);
+      await pumpEventQueue();
+      expect(a.isRecovering, isFalse);
+      repo.recovery.add(null);
+      await pumpEventQueue();
+      expect(a.isRecovering, isTrue);
+      await a.setNewPassword('newSecret123');
+      expect(repo.newPassword, 'newSecret123');
+      expect(a.isRecovering, isFalse);
+    });
+
+    test('a session ended elsewhere signs the user out', () async {
+      final s = testServices();
+      final repo = _BackendLikeAuth(s.auth);
+      final a = AuthProvider(repo, splash: Duration.zero);
+      await a.login(kRahim, 'Customer@123');
+      repo.ended.add(null);
+      await pumpEventQueue();
+      expect(a.user, isNull);
+    });
+
+    test('logout is immediate and also tells the backend', () async {
+      final s = testServices();
+      final repo = _BackendLikeAuth(s.auth);
+      final a = AuthProvider(repo, splash: Duration.zero);
+      await a.login(kRahim, 'Customer@123');
+      a.logout();
+      expect(a.user, isNull);
+      await pumpEventQueue();
+      expect(repo.loggedOut, isTrue);
+    });
+
+    test('idempotency keys are random, long enough and unique', () {
+      final keys = {for (var i = 0; i < 200; i++) newIdempotencyKey()};
+      expect(keys.length, 200);
+      expect(keys.every((k) => k.length == 24 && RegExp(r'^[0-9a-f]+$').hasMatch(k)), isTrue);
+    });
+
+    test('placing an order twice with the same key returns the original order', () async {
+      final s = testServices();
+      final rahim = await loginAs(s, kRahim);
+      final o = OrdersProvider(s.orders, s.payments, searchDelay: Duration.zero);
+      await o.load(rahim);
+      final before = o.orders.length;
+      final product = (await s.catalog.getProduct('p14'))!;
+      final item = CartItem(product: product, quantity: 1);
+      final breakdown = PricingService.compute([item.toPricedLine()], now: kNow);
+      Future<AppOrder> place(String key) => o.placeOrder(
+            user: rahim,
+            items: [item],
+            breakdown: breakdown,
+            contactPhone: '01912345678',
+            address: rahim.address,
+            note: '',
+            method: PaymentMethod.cod,
+            idempotencyKey: key,
+          );
+      final a = await place('retry-key-1');
+      final b = await place('retry-key-1');
+      expect(b.id, a.id);
+      expect(o.orders.length, before + 1, reason: 'a retry must not create a second order');
+      final c = await place('retry-key-2');
+      expect(c.id, isNot(a.id));
+    });
+
+    test('refreshOrder re-reads one order from the backend', () async {
+      final s = testServices();
+      final rahim = await loginAs(s, kRahim);
+      final o = OrdersProvider(s.orders, s.payments, searchDelay: Duration.zero);
+      await o.load(rahim);
+      await s.orders.updatePayment('ORD-1002', PaymentStatus.successful, provider: PaymentProvider.demo);
+      expect(o.byId('ORD-1002')!.payment.status, isNot(PaymentStatus.successful));
+      final fresh = await o.refreshOrder('ORD-1002');
+      expect(fresh.payment.status, PaymentStatus.successful);
+      expect(o.byId('ORD-1002')!.payment.status, PaymentStatus.successful);
+    });
+
+    test('customer figures come from the server summaries', () async {
+      final s = testServices();
+      final admin = await loginAs(s, kAdmin);
+      final c = CustomersProvider(s.auth, s.discounts);
+      await c.load(admin);
+      expect(c.customers, isNotEmpty);
+      final summary = c.summaryFor('u2')!;
+      expect(summary.user.name, 'Rahim Uddin');
+      expect(summary.orderCount, greaterThanOrEqualTo(0));
+      expect(summary.lifetimeSpendingMinor, greaterThanOrEqualTo(0));
+      expect(c.byId('u2')!.id, 'u2');
+      expect(c.summaryFor('nobody'), isNull);
     });
   });
 }

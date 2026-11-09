@@ -1,0 +1,39 @@
+{
+  "id": "f2939903-e6f6-4a62-8ddd-558a7639aa06",
+  "code": "FIX-001",
+  "unit": "yard",
+  "sizes": [
+    "M",
+    "L"
+  ],
+  "specs": {
+    "Width": "44 in",
+    "Material": "Cotton"
+  },
+  "colors": [
+    {
+      "argb": 4292395936,
+      "name": "Sand"
+    }
+  ],
+  "category": "Fabrics",
+  "discount": {
+    "kind": "fixed",
+    "value": 5000,
+    "enabled": true
+  },
+  "createdAt": "2026-11-06T22:42:08.075+00:00",
+  "imagePaths": [
+    "https://res.cloudinary.com/hmpqmney/image/upload/v1/toptailers/products/fixture-1.jpg"
+  ],
+  "isFeatured": true,
+  "popularity": 50,
+  "priceMinor": 45000,
+  "description": "Rich fixture",
+  "productName": "Fixture Fabric",
+  "availability": true,
+  "imagePublicIds": [
+    "toptailers/products/fixture-1"
+  ],
+  "requiresMeasurements": false
+}

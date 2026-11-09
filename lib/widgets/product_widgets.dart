@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +8,7 @@ import '../models/product.dart';
 import '../providers/cart_provider.dart';
 import '../providers/wishlist_provider.dart';
 import '../screens/customer/product_detail_screen.dart';
+import 'app_image.dart';
 import 'common.dart';
 
 IconData categoryIcon(String category) {
@@ -121,12 +120,11 @@ class ProductVisual extends StatelessWidget {
     final images = product.imagePaths;
     Widget content;
     if (index < images.length) {
-      content = Image.file(
-        File(images[index]),
-        fit: BoxFit.cover,
+      content = AppImage(
+        source: images[index],
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => _swatch(0),
+        fallback: _swatch(0),
       );
     } else {
       content = _swatch(index - images.length);

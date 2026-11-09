@@ -5,9 +5,9 @@ import '../repositories/repositories.dart';
 /// built and tested. It contacts no payment provider, collects no
 /// credentials and can never produce a genuine payment confirmation.
 ///
-/// To integrate SSLCommerz later, add a gateway that calls YOUR backend
-/// (which holds the merchant credentials, initiates the transaction and
-/// verifies the provider callback), then register it in AppServices.
+/// The live gateway is AamarPayGateway (lib/data/supabase), which calls the
+/// backend; the backend holds the merchant credentials, initiates the
+/// transaction and verifies the provider result.
 class DemoPaymentGateway implements PaymentGateway {
   DemoPaymentGateway({this.latency = const Duration(milliseconds: 300)});
 
@@ -24,6 +24,7 @@ class DemoPaymentGateway implements PaymentGateway {
   Future<PaymentSession> initiate({
     required String orderId,
     required int amountMinor,
+    String? idempotencyKey,
   }) async {
     if (latency != Duration.zero) await Future<void>.delayed(latency);
     _counter++;

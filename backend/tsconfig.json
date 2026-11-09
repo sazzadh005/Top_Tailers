@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "Bundler", "strict": true,
+    "noEmit": true, "allowImportingTsExtensions": true, "lib": ["ES2022", "DOM"], "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["supabase/functions/_shared/types.ts", "supabase/functions/_shared/aamarpay.ts", "supabase/functions/_shared/cloudinary.ts",
+              "supabase/functions/_shared/handlers.ts", "supabase/functions/_shared/errors.ts", "supabase/functions/_shared/env.ts"]
+}

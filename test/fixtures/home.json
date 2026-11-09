@@ -1,0 +1,407 @@
+{
+  "offers": [
+    {
+      "code": "DEMO10",
+      "kind": "percent",
+      "title": "Demo 10%",
+      "value": 10,
+      "isActive": true,
+      "isPublic": true,
+      "expiresAt": null,
+      "categories": []
+    },
+    {
+      "code": "DEMOFAB15",
+      "kind": "percent",
+      "title": "Demo fabrics 15%",
+      "value": 15,
+      "isActive": true,
+      "isPublic": true,
+      "expiresAt": null,
+      "categories": [
+        "Fabrics"
+      ]
+    }
+  ],
+  "banners": [
+    {
+      "id": "b1",
+      "title": "Festive Fabrics",
+      "category": "Fabrics",
+      "subtitle": "Up to 15% off with a voucher",
+      "colorArgb": 4287103018,
+      "voucherCode": "DEMOFAB15"
+    },
+    {
+      "id": "b2",
+      "title": "Tailoring",
+      "category": "Tailoring",
+      "subtitle": "Made to your measurements",
+      "colorArgb": 4281545523,
+      "voucherCode": null
+    }
+  ],
+  "popular": [
+    {
+      "id": "8e5295d7-9e64-44bf-a88e-d1997148b703",
+      "code": "FAB-COT-001",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4294242794,
+          "name": "White"
+        },
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "percent",
+        "value": 10,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:07.914+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 90,
+      "priceMinor": 45000,
+      "description": "Soft breathable cotton",
+      "productName": "Premium Cotton Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "7ff93808-564e-47fe-b77b-60cd45066ced",
+      "code": "RDY-SHT-101",
+      "unit": "piece",
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4294242794,
+          "name": "White"
+        }
+      ],
+      "category": "Readymade",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.971+00:00",
+      "imagePaths": [],
+      "isFeatured": false,
+      "popularity": 80,
+      "priceMinor": 145000,
+      "description": "A good product",
+      "productName": "Men's Formal Shirt",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "8a2c20e9-dc02-45d8-a137-c486557c5095",
+      "code": "TLR-SHT-201",
+      "unit": "service",
+      "sizes": [],
+      "specs": {},
+      "colors": [],
+      "category": "Tailoring",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.993+00:00",
+      "imagePaths": [],
+      "isFeatured": false,
+      "popularity": 75,
+      "priceMinor": 80000,
+      "description": "A good product",
+      "productName": "Shirt Stitching Service",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": true
+    },
+    {
+      "id": "097e52e8-7e9a-400c-b5f0-a46cf71adedd",
+      "code": "FAB-SLK-002",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4286258746,
+          "name": "Maroon"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.964+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 70,
+      "priceMinor": 120000,
+      "description": "A good product",
+      "productName": "Silk Blend Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "f2939903-e6f6-4a62-8ddd-558a7639aa06",
+      "code": "FIX-001",
+      "unit": "yard",
+      "sizes": [
+        "M",
+        "L"
+      ],
+      "specs": {
+        "Width": "44 in",
+        "Material": "Cotton"
+      },
+      "colors": [
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "fixed",
+        "value": 5000,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:08.075+00:00",
+      "imagePaths": [
+        "https://res.cloudinary.com/hmpqmney/image/upload/v1/toptailers/products/fixture-1.jpg"
+      ],
+      "isFeatured": true,
+      "popularity": 50,
+      "priceMinor": 45000,
+      "description": "Rich fixture",
+      "productName": "Fixture Fabric",
+      "availability": true,
+      "imagePublicIds": [
+        "toptailers/products/fixture-1"
+      ],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "7a5c0e5a-dae0-47ec-ad97-308aa6453e40",
+      "code": "ACC-BTN-301",
+      "unit": "piece",
+      "sizes": [],
+      "specs": {},
+      "colors": [],
+      "category": "Accessories",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:08.008+00:00",
+      "imagePaths": [],
+      "isFeatured": false,
+      "popularity": 35,
+      "priceMinor": 25000,
+      "description": "A good product",
+      "productName": "Button & Thread Set",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    }
+  ],
+  "featured": [
+    {
+      "id": "8e5295d7-9e64-44bf-a88e-d1997148b703",
+      "code": "FAB-COT-001",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4294242794,
+          "name": "White"
+        },
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "percent",
+        "value": 10,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:07.914+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 90,
+      "priceMinor": 45000,
+      "description": "Soft breathable cotton",
+      "productName": "Premium Cotton Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "097e52e8-7e9a-400c-b5f0-a46cf71adedd",
+      "code": "FAB-SLK-002",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4286258746,
+          "name": "Maroon"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.964+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 70,
+      "priceMinor": 120000,
+      "description": "A good product",
+      "productName": "Silk Blend Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "f2939903-e6f6-4a62-8ddd-558a7639aa06",
+      "code": "FIX-001",
+      "unit": "yard",
+      "sizes": [
+        "M",
+        "L"
+      ],
+      "specs": {
+        "Width": "44 in",
+        "Material": "Cotton"
+      },
+      "colors": [
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "fixed",
+        "value": 5000,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:08.075+00:00",
+      "imagePaths": [
+        "https://res.cloudinary.com/hmpqmney/image/upload/v1/toptailers/products/fixture-1.jpg"
+      ],
+      "isFeatured": true,
+      "popularity": 50,
+      "priceMinor": 45000,
+      "description": "Rich fixture",
+      "productName": "Fixture Fabric",
+      "availability": true,
+      "imagePublicIds": [
+        "toptailers/products/fixture-1"
+      ],
+      "requiresMeasurements": false
+    }
+  ],
+  "services": [
+    {
+      "id": "8a2c20e9-dc02-45d8-a137-c486557c5095",
+      "code": "TLR-SHT-201",
+      "unit": "service",
+      "sizes": [],
+      "specs": {},
+      "colors": [],
+      "category": "Tailoring",
+      "discount": null,
+      "createdAt": "2026-11-06T22:42:07.993+00:00",
+      "imagePaths": [],
+      "isFeatured": false,
+      "popularity": 75,
+      "priceMinor": 80000,
+      "description": "A good product",
+      "productName": "Shirt Stitching Service",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": true
+    }
+  ],
+  "discounted": [
+    {
+      "id": "8e5295d7-9e64-44bf-a88e-d1997148b703",
+      "code": "FAB-COT-001",
+      "unit": "yard",
+      "sizes": [],
+      "specs": {},
+      "colors": [
+        {
+          "argb": 4294242794,
+          "name": "White"
+        },
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "percent",
+        "value": 10,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:07.914+00:00",
+      "imagePaths": [],
+      "isFeatured": true,
+      "popularity": 90,
+      "priceMinor": 45000,
+      "description": "Soft breathable cotton",
+      "productName": "Premium Cotton Fabric",
+      "availability": true,
+      "imagePublicIds": [],
+      "requiresMeasurements": false
+    },
+    {
+      "id": "f2939903-e6f6-4a62-8ddd-558a7639aa06",
+      "code": "FIX-001",
+      "unit": "yard",
+      "sizes": [
+        "M",
+        "L"
+      ],
+      "specs": {
+        "Width": "44 in",
+        "Material": "Cotton"
+      },
+      "colors": [
+        {
+          "argb": 4292395936,
+          "name": "Sand"
+        }
+      ],
+      "category": "Fabrics",
+      "discount": {
+        "kind": "fixed",
+        "value": 5000,
+        "enabled": true
+      },
+      "createdAt": "2026-11-06T22:42:08.075+00:00",
+      "imagePaths": [
+        "https://res.cloudinary.com/hmpqmney/image/upload/v1/toptailers/products/fixture-1.jpg"
+      ],
+      "isFeatured": true,
+      "popularity": 50,
+      "priceMinor": 45000,
+      "description": "Rich fixture",
+      "productName": "Fixture Fabric",
+      "availability": true,
+      "imagePublicIds": [
+        "toptailers/products/fixture-1"
+      ],
+      "requiresMeasurements": false
+    }
+  ]
+}

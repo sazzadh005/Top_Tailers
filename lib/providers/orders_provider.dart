@@ -149,6 +149,7 @@ class OrdersProvider extends ChangeNotifier {
     String note = '',
     OrderMeasurementSnapshot? measurements,
     required PaymentMethod method,
+    String? idempotencyKey,
   }) async {
     final order = await _orders.placeOrder(
       PlaceOrderRequest(
@@ -170,6 +171,7 @@ class OrdersProvider extends ChangeNotifier {
         voucherCode: breakdown.voucherCode,
         paymentMethod: method,
         expectedTotalMinor: breakdown.totalMinor,
+        idempotencyKey: idempotencyKey,
       ),
     );
     _known[order.id] = order;
@@ -200,8 +202,21 @@ class OrdersProvider extends ChangeNotifier {
 
   /// Starts an online payment with the configured gateway. In this phase the
   /// gateway is a demonstration; success must never be assumed.
-  Future<PaymentSession> startOnlinePayment(AppOrder order) {
-    return _gateway.initiate(orderId: order.id, amountMinor: order.totalMinor);
+  Future<PaymentSession> startOnlinePayment(AppOrder order, {String? idempotencyKey}) {
+    return _gateway.initiate(
+      orderId: order.id,
+      amountMinor: order.totalMinor,
+      idempotencyKey: idempotencyKey,
+    );
+  }
+
+  /// Re-reads one order from the backend (e.g. after the customer returns from
+  /// the hosted payment page). The payment status shown is whatever the
+  /// server verified, never something this app decided.
+  Future<AppOrder> refreshOrder(String orderId) async {
+    final fresh = await _orders.getOrder(orderId);
+    _replace(fresh);
+    return fresh;
   }
 
   /// Records the outcome of an online payment attempt. With a real gateway

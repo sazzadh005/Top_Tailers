@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_services.dart';
 import '../../core/app_strings.dart';
 import '../../core/theme.dart';
 import '../../models/catalog_query.dart';
@@ -183,7 +184,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (home.offers.isNotEmpty) ...[
-              const SectionHeader(title: 'Offers (demonstration vouchers)'),
+              SectionHeader(
+                title: context.read<AppServices>().isDemoData ? 'Offers (demonstration vouchers)' : 'Offers',
+              ),
               SizedBox(
                 height: 88,
                 child: ListView.separated(
